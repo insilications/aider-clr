@@ -106,12 +106,13 @@ class Help:
     def __init__(self):
         from llama_index.core import Settings
         from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+        from torch import cuda
 
         os.environ["TOKENIZERS_PARALLELISM"] = "true"
-        Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+        Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5", device="cuda:0")
 
         index = get_index()
-
+        self.cuda = cuda
         self.retriever = index.as_retriever(similarity_top_k=20)
 
     def ask(self, question):
@@ -131,5 +132,9 @@ class Help:
             context += f"<doc{url}>\n"
             context += node.text
             context += "\n</doc>\n\n"
+
+        # Clear CUDA cache if available
+        if self.cuda.is_available():
+            self.cuda.empty_cache()
 
         return context
